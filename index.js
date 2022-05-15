@@ -21,7 +21,9 @@ class Dep{
 	}
 
 	depend() {
-		Dep.target.addDep(this);
+		if(Dep.target){ // 只有模板中使用了data里面的变量才会有 Dep.target，只是通过js改变data值，而页面中没有使用到，则不会触发 addDep
+			Dep.target.addDep(this);
+		}
 	}
 
 	notify() {
@@ -31,11 +33,7 @@ class Dep{
 	}
 }
 Dep.target = null;
-
-
-
-
-export function def(obj, key, val, enumerable) {
+function def(obj, key, val, enumerable) {
 	Object.defineProperty(obj, key, {
 			value: val,
 			enumerable: !!enumerable,
@@ -50,14 +48,19 @@ export function def(obj, key, val, enumerable) {
 class Observer{
 	constructor(data){
 		this.data = data;
+		this.dep = new Dep();
+		def(data, '__ob__', this);
+		debugger
 		if(Array.isArray(data)){ // 监听数组变化
 		
 			const arrayProto = Array.prototype
 			const arrayMethods = Object.create(arrayProto); // Array {}
-			['push','pop','shift','unshift','splice','sort','reverse'].forEach(method=>{
+			const keys = ['push','pop','shift','unshift','splice','sort','reverse']
+			keys.forEach(method=>{
 				const original = arrayProto[method]
 				Object.defineProperty(arrayMethods, method, {
 					value:function(){
+						debugger
 						const args = [...arguments]
 						const result = original.apply(this, args)
 						const ob = this.__ob__
@@ -70,20 +73,30 @@ class Observer{
 									inserted = args
 									break
 							case 'splice':
-									inserted = args.slice(2)
+									inserted = args.slice(2) // splice的第3,4...个参数也可能需要绑定
 									break
 						}
 						if(inserted){
 							ob.observeArray(inserted)
 						}
 						ob.dep.notify()
+						return result
 					},
 					enumerable:true,
 					writable: true,
 					configurable: true
 				})
-
 			})
+
+			keys.forEach(key=>{
+				Object.defineProperty(data,key,{
+					value: arrayMethods[key],
+        	enumerable:true,
+        	writable: true,
+        	configurable: true
+				})
+			})
+
 		} else {
 			this.walk(data);
 		}	  
@@ -110,14 +123,19 @@ class Observer{
 				console.log(`${key}触发了Get操作`)
 				if (Dep.target) {
 					dep.depend();
-					console.log("dingyue",dep)
+				}
+				if(Array.isArray(val)) {
+					debugger
+					dependArray(val)
 				}
 				return val;
 			},
 			set(newVal){
+				debugger
 				if (newVal === val) {
 					return;
 				}
+				console.log(`${key}触发了Set操作`)
 				val = newVal;
 				// 新的值是object的话，进行监听
 				childObj = observe(newVal);
@@ -129,11 +147,29 @@ class Observer{
 	}
 }
 
+//为数组添加依赖
+function dependArray(value) {
+	for (let e, i = 0, l = value.length; i < l; i++) {
+			e = value[i]
+			e && e.__ob__ && e.__ob__.dep.depend()
+			if (Array.isArray(e)) {
+					dependArray(e)
+			}
+	}
+}
+
+
 function observe(data,vm){
-	if(typeof data !=='object' || !data){
+	if(typeof data !=='object' || !data){ // 不是对象时不观察
 		return
 	}
-	return new Observer(data);
+	let ob = null
+	if(hasOwnProperty.call(data, '__ob__') && data.__ob__ instanceof Observer){
+		ob = data.__ob__
+	}else{
+		ob = new Observer(data);
+	}
+	return ob
 }
 
 
@@ -223,7 +259,7 @@ class Compile{
 				this.compileText(node, RegExp.$1.trim());
 			}
 
-			if (node.childNodes && node.childNodes.length) {
+			if (node.childNodes && node.childNodes.length) { // 有孩子时候就递归调用
 				this.compileElement(node);
 			}
 		})
@@ -259,7 +295,22 @@ class Compile{
 	}
 
 	compile(node){
-		var nodeAttrs = node.attributes
+		var nodeAttrs = [...node.attributes]
+		nodeAttrs.forEach(attr=>{
+			let attrName = attr.name
+			if(attrName.indexOf('v-') == 0){ // 判断是否为指令
+				let exp = attr.value;
+        let dir = attrName.substring(2);
+				if(dir.indexOf('on') === 0){ // 事件指令 例如 <button v-on:click="handleClick">点击</button>
+					let eventType = dir.split(':')[1]
+					let fn = this.$vm.$options.methods && this.$vm.$options.methods[exp];
+					if(eventType && fn){ // 这里只考虑原生事件 不考虑父子组件情况。
+						node.addEventListener(eventType, fn.bind(this.$vm), false);
+					}
+				}
+			}
+		})
+
 	}
 
 }
@@ -291,9 +342,20 @@ class Vue{
 		// 开始编译 id=app 下的内容
 		this.$compile = new Compile(options.el,this)
   }
+
+	// todo
+	$set(target, key, val){
+
+	}
+
+	$delete(){
+
+	}
+
+
+
+
 }
 
 
-
-// Observe Dep Watcher关系
 

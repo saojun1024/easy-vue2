@@ -9,7 +9,8 @@
 <body>
 	<div id="app">
 		<h1>Vue2原理分析</h1>
-		<h2>{{title}}</h2>
+		<h2>标题：{{title}}</h2>
+		<button v-on:click="handleChangeTitle">点击我，2秒后改变标题</button>
 		<form>
 			<label>你的名字</label>
 			<input v-model="formData.name" type="text"/>
@@ -18,17 +19,34 @@
 	</div>
 	<script src="./index.js"></script>
 	<script>
-		new Vue({
+		const vm = new Vue({
 			el:'#app',
 			data(){
 				return {
 					title:'hello,world',
 					formData:{
 						name:''
-					}
+					},
+					list:[]
+				}
+			},
+			methods:{
+				handleChangeTitle(){
+					setTimeout(()=>{
+						debugger
+						this.title = "hello,vue"
+					},2000)
 				}
 			}
 		})
+
+		vm.list.push({name:'张三',status:1})
+		setTimeout(()=>{
+			debugger
+			vm.list[0].name = "李四"
+		},3000)
+		
+
 	</script>
 </body>
 </html>
