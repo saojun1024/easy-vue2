@@ -125,13 +125,11 @@ class Observer{
 					dep.depend();
 				}
 				if(Array.isArray(val)) {
-					debugger
 					dependArray(val)
 				}
 				return val;
 			},
 			set(newVal){
-				debugger
 				if (newVal === val) {
 					return;
 				}
@@ -306,6 +304,20 @@ class Compile{
 					let fn = this.$vm.$options.methods && this.$vm.$options.methods[exp];
 					if(eventType && fn){ // 这里只考虑原生事件 不考虑父子组件情况。
 						node.addEventListener(eventType, fn.bind(this.$vm), false);
+					}
+				}else{ // 普通指令 v-model="formData.a.b" 这里不考虑修饰符
+					if(dir === 'model'){
+						let val = this._getVMVal(this.$vm, exp);
+						let updater = function(node,value,oldValue){
+							node.value = typeof value == 'undefined' ? '' : value;
+						}
+						// 先执行一次函数，触发get操作，将值复制给输入框
+						updater(node,this._getVMVal(this.$vm, exp))
+						// 后续需要观察这个值，值变动了需要得到更新
+						new Watcher(this.$vm,exp,function(node){
+							
+						})
+
 					}
 				}
 			}
