@@ -174,6 +174,7 @@ function observe(data,vm){
 // 观察者 传入的是this对象，表达式以及绑定的更新dom的回调函数
 class Watcher{
 	constructor(vm,expOrFn,cb){
+		debugger
 		this.cb = cb
 		this.id = uid++
 		this.expOrFn = expOrFn
@@ -284,6 +285,18 @@ class Compile{
 		return val;
 	}
 
+	_setVMVal(vm,exp,value){
+		let val = vm
+		let e = exp.split('.')
+		e.forEach((key,index)=>{
+			if(index<e.length-1){
+				val = val[key]
+			}else{
+				val[key] = value
+			}
+		})
+	}
+
 	isElementNode(node) {
 		return node.nodeType == 1;
 	}
@@ -312,11 +325,22 @@ class Compile{
 							node.value = typeof value == 'undefined' ? '' : value;
 						}
 						// 先执行一次函数，触发get操作，将值复制给输入框
-						updater(node,this._getVMVal(this.$vm, exp))
-						// 后续需要观察这个值，值变动了需要得到更新
-						new Watcher(this.$vm,exp,function(node){
-							
+						let initalVal = this._getVMVal(this.$vm, exp)
+						updater(node,initalVal)
+						// 后续需要观察这个值，值变动了需要得到更新,这里new Watcher第三个参数为函数，构成一个闭包。compile执行完毕后node变量不会消失。
+						new Watcher(this.$vm,exp,function(newVal,oldVal){
+							updater(node,newVal,oldVal)
 						})
+						node.addEventListener("input",(e)=>{
+							let newVal = e.target.value
+							if(newVal === initalVal){
+								return 
+							}
+							// 对data里的值赋值，会触发set操作，从而通知dep 调用update方法来执行sub里的 watcher
+							this._setVMVal(vm,exp,newVal);
+						})
+
+
 
 					}
 				}
@@ -329,7 +353,7 @@ class Compile{
 
 
 class Vue{
-  constructor( options){
+  constructor(options){
     this.$options = options || {};
 		// vue data 可以是个对象，如果作为组件可能在多个页面使用时，就必须为函数，避免多个组件data指向同一个data
 		this._data = typeof options.data === 'function' ? options.data() : options.data
@@ -346,13 +370,40 @@ class Vue{
 				}
 			})
 		})
-		// 开始 vue 响应式原理核心点，面试必备（背）
+		// 开始 vue 响应式原理核心点
 		observe(this._data, this);
+
+		if(options.watch){
+			this.initWatch(this,options.watch)
+		}
+		
 
 		// 编译环节 由于虚拟dom比较复杂，这里我们只考虑手动编译dom来依赖收集
 		// 开始编译 id=app 下的内容
 		this.$compile = new Compile(options.el,this)
   }
+
+
+	initWatch(vm,watch){
+		Object.keys(watch).forEach(key=>{
+			const handler = watch[key]
+			let options = null
+			if(Object.prototype.toString.call(handler) === '[object Object]'){
+				options = handler
+				handler = handler.handler
+			}
+
+			if (typeof handler === 'string') {
+        handler = vm[handler]
+    	}
+    	vm.$watch(key, handler, options)
+		})
+	}
+
+
+	$watch(){
+
+	}
 
 	// todo
 	$set(target, key, val){
