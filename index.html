@@ -30,6 +30,11 @@
 					list:[]
 				}
 			},
+			watch:{
+				title:function(newVal,oldVal){
+					console.log(`title: ${oldVal} => ${newVal} `)
+				}
+			},
 			methods:{
 				handleChangeTitle(){
 					setTimeout(()=>{

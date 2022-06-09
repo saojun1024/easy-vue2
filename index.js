@@ -372,7 +372,6 @@ class Vue{
 		})
 		// 开始 vue 响应式原理核心点
 		observe(this._data, this);
-
 		if(options.watch){
 			this.initWatch(this,options.watch)
 		}
@@ -392,17 +391,20 @@ class Vue{
 				options = handler
 				handler = handler.handler
 			}
-
-			if (typeof handler === 'string') {
-        handler = vm[handler]
-    	}
+			if(typeof handler ==='function'){
+				options = {}
+			}
     	vm.$watch(key, handler, options)
 		})
 	}
 
 
-	$watch(){
-
+	$watch(expOrFn, cb, options={}){
+		const vm = this
+		const watcher = new Watcher(vm, expOrFn, cb, options)
+    if (options.immediate) {
+      cb.call(vm, watcher.value)
+    }
 	}
 
 	// todo
