@@ -173,13 +173,16 @@ function observe(data,vm){
 
 // 观察者 传入的是this对象，表达式以及绑定的更新dom的回调函数
 class Watcher{
-	constructor(vm,expOrFn,cb){
+	constructor(vm,expOrFn,cb,options){
 		debugger
 		this.cb = cb
 		this.id = uid++
 		this.expOrFn = expOrFn
 		this.vm = vm
 		this.depIds = {}
+		if(options){ // computed 中定义的get函数会被标记为 dirty
+			this.dirty = options.lazy
+		}
 		if(typeof expOrFn === 'function'){
 			this.getter = expOrFn;
 		} else {
@@ -200,6 +203,13 @@ class Watcher{
 			this.cb.call(this.vm, value, oldVal);
 		}
 	}
+
+	//依赖发生改变以后，获取值是重新赋值的方法
+	evaluate() {
+		this.value = this.get()
+		this.dirty = false
+	}
+	
 	get() {
 		Dep.target = this;
 		var value = this.getter.call(this.vm,this.vm); // 重要点；执行此处后会触发Object.defineProperty中的get操作。此时Dep对象target指向此watcher
@@ -351,6 +361,63 @@ class Compile{
 }
 
 
+function initWatch(vm,watch){
+	Object.keys(watch).forEach(key=>{
+		const handler = watch[key]
+		let options = null
+		if(Object.prototype.toString.call(handler) === '[object Object]'){
+			options = handler
+			handler = handler.handler
+		}
+		if(typeof handler ==='function'){
+			options = {}
+		}
+		vm.$watch(key, handler, options)
+	})
+}
+
+function initComputed(vm,computed){
+	for(const key in computed){
+		vm._computedWatchers = Object.create(null)
+		let getter = typeof computed[key] === 'function' ? computed[key] : computed[key].get
+		vm._computedWatchers[key] = new Watcher(vm, getter, function(){}, { lazy: true })
+		if(typeof computed[key] === 'function'){
+			Object.defineProperty(vm, key, {
+				enumerable: true,
+    		configurable: true,
+				set:function(){}, // 用户配置的computed如果是个函数的话，则set是个空函数
+				get:function(){
+					const watcher = vm._computedWatchers && vm._computedWatchers[key]
+        	if (watcher) {
+            if (watcher.dirty) {
+                watcher.evaluate()
+            }
+            if (Dep.target) {
+                watcher.depend()
+            }
+            return watcher.value
+        	}
+				}
+			})
+		}
+	}
+}
+
+
+function initWatch(vm,watch){
+	Object.keys(watch).forEach(key=>{
+		const handler = watch[key]
+		let options = null
+		if(Object.prototype.toString.call(handler) === '[object Object]'){
+			options = handler
+			handler = handler.handler
+		}
+		if(typeof handler ==='function'){
+			options = {}
+		}
+		vm.$watch(key, handler, options)
+	})
+}
 
 class Vue{
   constructor(options){
@@ -370,36 +437,20 @@ class Vue{
 				}
 			})
 		})
+
 		// 开始 vue 响应式原理核心点
 		observe(this._data, this);
-
 		if (options.computed) {
 			initComputed(this, options.computed)
 		}
 		if(options.watch){
-			this.initWatch(this,options.watch)
+			initWatch(this,options.watch)
 		}
-		
 
 		// 编译环节 由于虚拟dom比较复杂，这里我们只考虑手动编译dom来依赖收集
 		// 开始编译 id=app 下的内容
 		this.$compile = new Compile(options.el,this)
   }
-
-	initWatch(vm,watch){
-		Object.keys(watch).forEach(key=>{
-			const handler = watch[key]
-			let options = null
-			if(Object.prototype.toString.call(handler) === '[object Object]'){
-				options = handler
-				handler = handler.handler
-			}
-			if(typeof handler ==='function'){
-				options = {}
-			}
-    	vm.$watch(key, handler, options)
-		})
-	}
 
 	$watch(expOrFn, cb, options={}){
 		const vm = this
