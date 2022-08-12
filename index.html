@@ -47,7 +47,6 @@
 
 		vm.list.push({name:'张三',status:1})
 		setTimeout(()=>{
-			debugger
 			vm.list[0].name = "李四"
 		},3000)
 		
@@ -55,3 +54,11 @@
 	</script>
 </body>
 </html>
+
+
+
+computed:{
+	sum(){
+		return this.price * this.total
+	}
+}

@@ -372,6 +372,10 @@ class Vue{
 		})
 		// 开始 vue 响应式原理核心点
 		observe(this._data, this);
+
+		if (options.computed) {
+			initComputed(this, options.computed)
+		}
 		if(options.watch){
 			this.initWatch(this,options.watch)
 		}
@@ -381,7 +385,6 @@ class Vue{
 		// 开始编译 id=app 下的内容
 		this.$compile = new Compile(options.el,this)
   }
-
 
 	initWatch(vm,watch){
 		Object.keys(watch).forEach(key=>{
@@ -397,7 +400,6 @@ class Vue{
     	vm.$watch(key, handler, options)
 		})
 	}
-
 
 	$watch(expOrFn, cb, options={}){
 		const vm = this

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vxe-table/lib/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+  <div id="app" style="padding:48px">
+    <!-- <vxe-table
+      border
+      show-overflow
+      ref="xTable1"
+      height="300"
+      :row-config="{isHover: true}"
+      :sort-config="{trigger: 'cell'}">
+      <vxe-column type="seq" width="100"></vxe-column>
+      <vxe-column field="name" title="Name" sortable></vxe-column>
+      <vxe-column field="sex" title="Sex"></vxe-column>
+      <vxe-column field="age" title="Age"></vxe-column>
+      <vxe-column field="address" title="Address" show-overflow></vxe-column>
+    </vxe-table> -->
+    <el-table
+    :data="tableData"
+    border
+    style="width:100%">
+    <el-table-column
+      fixed="left"
+      prop="date"
+      label="日期"
+      width="150">
+    </el-table-column>
+    <el-table-column
+      prop="name"
+      label="姓名"
+      width="120">
+    </el-table-column>
+    <el-table-column
+      prop="province"
+      label="省份"
+      width="120">
+    </el-table-column>
+    <el-table-column
+      prop="city"
+      label="市区"
+      width="200">
+    </el-table-column>
+    <el-table-column
+      prop="address"
+      label="地址"
+      width="500">
+    </el-table-column>
+    <el-table-column
+      prop="zip"
+      label="邮编"
+      width="120">
+    </el-table-column>
+    <el-table-column prop="a" label="a列" width="200">
+      <template slot-scope="scope">
+        <el-date-picker v-model="scope.row.a" type="date" placeholder="选择日期"></el-date-picker>
+      </template>
+    </el-table-column>
+    <el-table-column prop="b" label="b列" width="200">
+      <template slot-scope="scope">
+        <el-input type="text" v-model="scope.row.b"></el-input>
+      </template>
+      
+    </el-table-column>
+    <el-table-column prop="c" label="c列" width="200"></el-table-column>
+    <el-table-column prop="d" label="d列" width="200"></el-table-column>
+    <el-table-column prop="e" label="e列" width="200"></el-table-column>
+    <el-table-column prop="f" label="f列" width="200"></el-table-column>
+    <el-table-column prop="g" label="g列" width="200"></el-table-column>
+
+    <el-table-column prop="h" label="h列" width="200"></el-table-column>
+    <el-table-column prop="i" label="i列" width="200"></el-table-column>
+    <el-table-column prop="j" label="j列" width="200"></el-table-column>
+    <el-table-column prop="k" label="k列" width="200"></el-table-column>
+    <el-table-column prop="l" label="l列" width="200"></el-table-column>
+    <el-table-column prop="m" label="m列" width="200"></el-table-column>
+    <el-table-column prop="n" label="n列" width="200"></el-table-column>
+    <el-table-column
+      fixed="right"
+      label="操作"
+      width="100">
+      <template slot-scope="scope">
+        <el-button @click="handleClick(scope.row)" type="text" size="small">查看</el-button>
+        <el-button type="text" size="small">编辑</el-button>
+      </template>
+    </el-table-column>
+
+  </el-table>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/xe-utils"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vxe-table"></script> -->
+  <!-- <script src="//unpkg.com/vue@2/dist/vue.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.8/lib/index.js"></script>
+  <script>
+   console.time("测试性能")
+   var Main = {
+    methods: {
+      handleClick(row) {
+        console.log(row);
+      }
+    },
+  
+  mounted(){
+    for(let i=0;i<500;i++){
+      this.tableData.push({
+        date: '2016-05-02',
+          name: '王小虎',
+          province: '上海',
+          city: '普陀区',
+          address: '上海市普陀区金沙江路 1518 弄',
+          zip: 200333,
+          a:'2021-09-22',
+          b:2,
+          c:10000,
+          d:30000,
+          e:'dedededefrf',
+          f:'frfrfdfref343',
+          g:200000,
+          h:1,
+          i:444,
+          j:43434,
+          k:'3444',
+          l:23,
+          m:'3e32e32e23',
+          n:'23e3e3e44'
+      })
+    }
+    this.$nextTick(()=>{
+      console.timeEnd("测试性能")
+    })
+  },
+
+    data() {
+      return {
+        tableData: []
+      }
+    }
+  }
+var Ctor = Vue.extend(Main)
+new Ctor().$mount('#app')
+  </script>
+</body>
+</html>
